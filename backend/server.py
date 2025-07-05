@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from collections import defaultdict
-from fastmcp import FastMCP, ModelNode
+from backend.fastmcp import FastMCP, ModelNode
 import json
 import csv
 from io import StringIO
