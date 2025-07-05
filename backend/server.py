@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from collections import defaultdict
 from fastmcp import FastMCP, ModelNode
@@ -159,15 +160,31 @@ class Budget(BaseModel):
 
 @app.post("/expense")
 def log_expense(expense: Expense):
-    return mcp.run_model("ExpenseLoggerAgent", expense=expense.dict())
+    return JSONResponse(content=mcp.run_model("ExpenseLoggerAgent", expense=expense.dict()))
 
 @app.get("/expense/trends")
 def get_trends():
-    return mcp.run_model("BudgetTrendAgent")
+    try:
+        result = mcp.run_model("BudgetTrendAgent")
+        return JSONResponse(content=result)
+    except Exception:
+        return JSONResponse(content={
+            "daily_totals": {},
+            "weekly_total": 0,
+            "weekly_budget": storage.get_budget(),
+            "categories": {}
+        })
 
 @app.get("/expense/tip")
 def get_tip():
-    return mcp.run_model("SavingTipAgent")
+    try:
+        result = mcp.run_model("SavingTipAgent")
+        return JSONResponse(content=result)
+    except Exception:
+        return JSONResponse(content={
+            "tip": "Could not generate tip.",
+            "streak": ""
+        })
 
 @app.post("/budget")
 def set_budget(budget: Budget):

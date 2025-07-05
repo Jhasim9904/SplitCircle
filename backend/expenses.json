@@ -1,4 +1,23 @@
 {
-  "expenses": [],
-  "weekly_budget": 2000.0
+  "expenses": [
+    {
+      "date": "2025-07-05",
+      "amount": 1000.0,
+      "category": "Housing",
+      "note": ""
+    },
+    {
+      "date": "2025-07-05",
+      "amount": 200.0,
+      "category": "Transport",
+      "note": ""
+    },
+    {
+      "date": "2025-07-05",
+      "amount": 500.0,
+      "category": "Transport",
+      "note": ""
+    }
+  ],
+  "weekly_budget": 3000.0
 }

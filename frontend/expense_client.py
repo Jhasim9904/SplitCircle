@@ -2,8 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 
-BASE_URL = "https://expense-buddy-mcp-server.onrender.com"
-
+BASE_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(page_title="💸 Expense Buddy", layout="wide")
 st.title("💸 Expense & Budget Buddy")
@@ -25,11 +24,11 @@ with st.sidebar:
     st.header("📅 Weekly Overview")
 
     try:
-        trends_res = requests.get(f"{BASE_URL}/expense/trends")
-        trends = trends_res.json()
+        trends_res = requests.get(f"{BASE_URL}/expense/trends", timeout=10)
+        trends = trends_res.json() if trends_res.status_code == 200 else {}
 
-        spent = trends["weekly_total"]
-        budget = trends["weekly_budget"]
+        spent = trends.get("weekly_total", 0)
+        budget = trends.get("weekly_budget", 0)
         remaining = max(budget - spent, 0)
 
         st.metric("Weekly Budget", f"₹{budget:.2f}")
@@ -37,7 +36,7 @@ with st.sidebar:
         st.metric("Remaining", f"₹{remaining:.2f}")
 
         st.write("### 📂 Top Categories")
-        for category, amt in trends["categories"].items():
+        for category, amt in trends.get("categories", {}).items():
             st.write(f"- {category}: ₹{amt:.2f}")
 
         progress = min(spent / budget, 1.0) if budget else 0
@@ -48,8 +47,12 @@ with st.sidebar:
 
     st.write("---")
     if st.button("🗑️ Reset All Expenses"):
-        res = requests.post(f"{BASE_URL}/expenses/reset")
-        st.session_state.log_message = res.json().get("status", "Something went wrong!")
+        try:
+            res = requests.post(f"{BASE_URL}/expenses/reset", timeout=10)
+            status = res.json().get("status", "Something went wrong!")
+            st.session_state.log_message = status
+        except Exception as e:
+            st.session_state.log_message = f"Error resetting: {e}"
         st.rerun()
 
 # ----------------------------
@@ -57,10 +60,9 @@ with st.sidebar:
 # ----------------------------
 st.header("📌 Log a new expense")
 
-# ✅ Show log message
 if st.session_state.log_message:
     st.success(st.session_state.log_message)
-    st.session_state.log_message = ""  # clear after showing
+    st.session_state.log_message = ""
 
 with st.form("expense_form"):
     col1, col2 = st.columns(2)
@@ -80,31 +82,45 @@ if submitted:
         "category": category,
         "note": note
     }
-    res = requests.post(f"{BASE_URL}/expense", json=expense)
-    data = res.json()
-    st.session_state.log_message = data.get("status", f"Unexpected response: {data}")
+    try:
+        res = requests.post(f"{BASE_URL}/expense", json=expense, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            st.session_state.log_message = data.get("status", "Expense logged!")
+        else:
+            st.session_state.log_message = f"Error: {res.status_code}"
+    except Exception as e:
+        st.session_state.log_message = f"Request failed: {e}"
     st.rerun()
 
-# ----------------------------
-# 📊 Expense Trends + Charts
-# ----------------------------
 # ----------------------------
 # 📊 Expense Trends + Charts
 # ----------------------------
 st.header("📊 Expense Trends")
 
 with st.expander("Click to view Expense Trends"):
-    res = requests.get(f"{BASE_URL}/expense/trends")
-    data = res.json()
+    try:
+        res = requests.get(f"{BASE_URL}/expense/trends", timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            st.subheader("📅 Daily Totals")
+            if data.get("daily_totals"):
+                st.bar_chart(pd.Series(data["daily_totals"]))
+            else:
+                st.info("No daily data yet.")
 
-    st.subheader("📅 Daily Totals")
-    st.bar_chart(pd.Series(data["daily_totals"]))
+            st.subheader("📂 Spending by Category")
+            if data.get("categories"):
+                st.bar_chart(pd.Series(data["categories"]))
+            else:
+                st.info("No category data yet.")
 
-    st.subheader("📂 Spending by Category")
-    st.bar_chart(pd.Series(data["categories"]))
+            st.json(data)
+        else:
+            st.warning(f"Could not fetch trends: {res.status_code}")
 
-    st.json(data)
-
+    except Exception as e:
+        st.warning(f"Could not load trends: {e}")
 
 # ----------------------------
 # 💡 Saving Tip
@@ -112,18 +128,23 @@ with st.expander("Click to view Expense Trends"):
 st.header("💡 Saving Tip")
 
 if st.button("Get Tip"):
-    data = requests.get(f"{BASE_URL}/expense/tip").json()
-    if "tip" in data:
-        st.info(data["tip"])
-    if "streak" in data:
-        st.success(data["streak"])
+    try:
+        res = requests.get(f"{BASE_URL}/expense/tip", timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            st.info(data.get("tip", "No tip available."))
+            if data.get("streak"):
+                st.success(data["streak"])
+        else:
+            st.warning(f"Tip request failed: {res.status_code}")
+    except Exception as e:
+        st.warning(f"Could not fetch tip: {e}")
 
 # ----------------------------
 # 📅 Weekly Budget
 # ----------------------------
 st.header("💰 Weekly Budget Settings")
 
-# ✅ Show budget messages
 if st.session_state.budget_message:
     st.success(st.session_state.budget_message)
     st.session_state.budget_message = ""
@@ -135,13 +156,27 @@ if st.session_state.current_budget_message:
 budget = st.number_input("Set new weekly budget", min_value=0.0)
 
 if st.button("Update Budget"):
-    res = requests.post(f"{BASE_URL}/budget", json={"weekly_budget": budget})
-    st.session_state.budget_message = f"Budget updated: ₹{res.json()['weekly_budget']}"
+    try:
+        res = requests.post(f"{BASE_URL}/budget", json={"weekly_budget": budget}, timeout=10)
+        if res.status_code == 200:
+            new_budget = res.json().get("weekly_budget", budget)
+            st.session_state.budget_message = f"Budget updated: ₹{new_budget:.2f}"
+        else:
+            st.session_state.budget_message = f"Update failed: {res.status_code}"
+    except Exception as e:
+        st.session_state.budget_message = f"Request failed: {e}"
     st.rerun()
 
 if st.button("Get Current Budget"):
-    res = requests.get(f"{BASE_URL}/budget")
-    st.session_state.current_budget_message = f"Weekly Budget: ₹{res.json()['weekly_budget']}"
+    try:
+        res = requests.get(f"{BASE_URL}/budget", timeout=10)
+        if res.status_code == 200:
+            current = res.json().get("weekly_budget", 0)
+            st.session_state.current_budget_message = f"Weekly Budget: ₹{current:.2f}"
+        else:
+            st.session_state.current_budget_message = f"Failed: {res.status_code}"
+    except Exception as e:
+        st.session_state.current_budget_message = f"Could not fetch budget: {e}"
     st.rerun()
 
 # ----------------------------
@@ -150,11 +185,17 @@ if st.button("Get Current Budget"):
 st.header("📤 Export Expenses")
 
 if st.button("Export to CSV"):
-    res = requests.get(f"{BASE_URL}/expenses/export")
-    csv_data = res.text
-    st.download_button(
-        label="Download CSV",
-        data=csv_data,
-        file_name="expenses.csv",
-        mime="text/csv"
-    )
+    try:
+        res = requests.get(f"{BASE_URL}/expenses/export", timeout=10)
+        if res.status_code == 200:
+            csv_data = res.text
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name="expenses.csv",
+                mime="text/csv"
+            )
+        else:
+            st.warning(f"Export failed: {res.status_code}")
+    except Exception as e:
+        st.warning(f"Could not export: {e}")
