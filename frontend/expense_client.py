@@ -2,7 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "https://expense-buddy-mcp-server.onrender.com"
+
 
 st.set_page_config(page_title="💸 Expense Buddy", layout="wide")
 st.title("💸 Expense & Budget Buddy")
