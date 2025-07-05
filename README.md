@@ -47,6 +47,7 @@ Expense-Buddy/
 │   ├── requirements.txt
 ├── README.md
 ```
+
 ---
 
 ## 🧩 **How It Works**
@@ -105,8 +106,8 @@ Expense-Buddy/
 
 ## ✅ **Note on Data Persistence**
 
-This project uses a simple **shared JSON file** for demonstration — this keeps the MCP concept clear and easy to understand.
-For production, each user’s data would be stored separately in a proper database (e.g., SQLite, Firebase) to avoid shared data and provide user isolation.
+This project uses a simple **separate JSON files for each user based on their User ID's entered in the Sidebar** — this keeps the MCP concept clear and easy to understand.
+For production, each user’s data would be stored separately in a proper database (e.g., SQLite, Firebase) to provide user isolation and efficient query.
 
 ---
 
@@ -129,4 +130,7 @@ Built with passion by **Jhasim Hassan**
 ## 📜 **License**
 
 For educational and demonstration purposes only.
+
+```
+
 ```
