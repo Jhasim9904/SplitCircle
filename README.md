@@ -46,7 +46,7 @@ Expense-Buddy/
 │   ├── expense_client.py  # Streamlit frontend app
 │   ├── requirements.txt
 ├── README.md
-
+```
 ---
 
 ## 🧩 **How It Works**
