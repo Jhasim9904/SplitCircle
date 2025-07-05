@@ -6,4 +6,3 @@ streamlit
 requests
 pandas
 matplotlib
-mcp
