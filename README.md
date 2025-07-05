@@ -35,15 +35,16 @@ This shows how an MCP pattern works in real life: the backend handles data proce
 
 ## 🗂️ **Project Structure**
 
+```plaintext
 Expense-Buddy/
 ├── backend/
-│ ├── server.py # FastAPI server with FastMCP
-│ ├── fastmcp.py # MCP node for NLP & processing
-│ ├── expenses.json # Stores expenses & budget data
-│ ├── requirements.txt
+│   ├── server.py          # FastAPI server with FastMCP
+│   ├── fastmcp.py         # MCP node for NLP & processing
+│   ├── expenses.json      # Stores expenses & budget data
+│   ├── requirements.txt
 ├── frontend/
-│ ├── expense_client.py # Streamlit frontend app
-│ ├── requirements.txt
+│   ├── expense_client.py  # Streamlit frontend app
+│   ├── requirements.txt
 ├── README.md
 
 ---
@@ -104,7 +105,7 @@ Expense-Buddy/
 
 ## ✅ **Note on Data Persistence**
 
-This project uses a simple **shared JSON file** for demonstration — this keeps the MCP concept clear and easy to understand.  
+This project uses a simple **shared JSON file** for demonstration — this keeps the MCP concept clear and easy to understand.
 For production, each user’s data would be stored separately in a proper database (e.g., SQLite, Firebase) to avoid shared data and provide user isolation.
 
 ---
@@ -128,3 +129,4 @@ Built with passion by **Jhasim Hassan**
 ## 📜 **License**
 
 For educational and demonstration purposes only.
+```
