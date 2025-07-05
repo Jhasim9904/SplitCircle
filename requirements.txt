@@ -1,0 +1,9 @@
+# requirements.txt
+fastapi
+uvicorn
+pydantic
+streamlit
+requests
+pandas
+matplotlib
+mcp
