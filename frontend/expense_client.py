@@ -2,10 +2,17 @@ import streamlit as st
 import requests
 import pandas as pd
 
+# 👉 Local dev URL
 BASE_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(page_title="💸 Expense Buddy", layout="wide")
 st.title("💸 Expense & Budget Buddy")
+
+# ----------------------------------------
+# 🔑 User ID input for per-user JSON files
+# ----------------------------------------
+st.sidebar.write("🔑 **User ID** (to keep your expenses separate)")
+user_id = st.sidebar.text_input("Enter your user ID:", value="demo_user")
 
 # ----------------------------
 # ✅ SESSION STATE for messages
@@ -24,7 +31,7 @@ with st.sidebar:
     st.header("📅 Weekly Overview")
 
     try:
-        trends_res = requests.get(f"{BASE_URL}/expense/trends", timeout=10)
+        trends_res = requests.get(f"{BASE_URL}/expense/trends", params={"user_id": user_id}, timeout=10)
         trends = trends_res.json() if trends_res.status_code == 200 else {}
 
         spent = trends.get("weekly_total", 0)
@@ -48,7 +55,7 @@ with st.sidebar:
     st.write("---")
     if st.button("🗑️ Reset All Expenses"):
         try:
-            res = requests.post(f"{BASE_URL}/expenses/reset", timeout=10)
+            res = requests.post(f"{BASE_URL}/expenses/reset", params={"user_id": user_id}, timeout=10)
             status = res.json().get("status", "Something went wrong!")
             st.session_state.log_message = status
         except Exception as e:
@@ -83,7 +90,7 @@ if submitted:
         "note": note
     }
     try:
-        res = requests.post(f"{BASE_URL}/expense", json=expense, timeout=10)
+        res = requests.post(f"{BASE_URL}/expense", json=expense, params={"user_id": user_id}, timeout=10)
         if res.status_code == 200:
             data = res.json()
             st.session_state.log_message = data.get("status", "Expense logged!")
@@ -100,7 +107,7 @@ st.header("📊 Expense Trends")
 
 with st.expander("Click to view Expense Trends"):
     try:
-        res = requests.get(f"{BASE_URL}/expense/trends", timeout=10)
+        res = requests.get(f"{BASE_URL}/expense/trends", params={"user_id": user_id}, timeout=10)
         if res.status_code == 200:
             data = res.json()
             st.subheader("📅 Daily Totals")
@@ -129,7 +136,7 @@ st.header("💡 Saving Tip")
 
 if st.button("Get Tip"):
     try:
-        res = requests.get(f"{BASE_URL}/expense/tip", timeout=10)
+        res = requests.get(f"{BASE_URL}/expense/tip", params={"user_id": user_id}, timeout=10)
         if res.status_code == 200:
             data = res.json()
             st.info(data.get("tip", "No tip available."))
@@ -157,7 +164,12 @@ budget = st.number_input("Set new weekly budget", min_value=0.0)
 
 if st.button("Update Budget"):
     try:
-        res = requests.post(f"{BASE_URL}/budget", json={"weekly_budget": budget}, timeout=10)
+        res = requests.post(
+            f"{BASE_URL}/budget",
+            json={"weekly_budget": budget},
+            params={"user_id": user_id},
+            timeout=10
+        )
         if res.status_code == 200:
             new_budget = res.json().get("weekly_budget", budget)
             st.session_state.budget_message = f"Budget updated: ₹{new_budget:.2f}"
@@ -169,7 +181,7 @@ if st.button("Update Budget"):
 
 if st.button("Get Current Budget"):
     try:
-        res = requests.get(f"{BASE_URL}/budget", timeout=10)
+        res = requests.get(f"{BASE_URL}/budget", params={"user_id": user_id}, timeout=10)
         if res.status_code == 200:
             current = res.json().get("weekly_budget", 0)
             st.session_state.current_budget_message = f"Weekly Budget: ₹{current:.2f}"
@@ -186,13 +198,13 @@ st.header("📤 Export Expenses")
 
 if st.button("Export to CSV"):
     try:
-        res = requests.get(f"{BASE_URL}/expenses/export", timeout=10)
+        res = requests.get(f"{BASE_URL}/expenses/export", params={"user_id": user_id}, timeout=10)
         if res.status_code == 200:
             csv_data = res.text
             st.download_button(
                 label="Download CSV",
                 data=csv_data,
-                file_name="expenses.csv",
+                file_name=f"expenses_{user_id}.csv",
                 mime="text/csv"
             )
         else:

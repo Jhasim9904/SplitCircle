@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Response
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Response, Query
 from pydantic import BaseModel
 from collections import defaultdict
 from fastmcp import FastMCP, ModelNode
@@ -8,11 +7,11 @@ import csv
 from io import StringIO
 
 # ------------------------
-# 📂 Local JSON storage
+# 📂 Local JSON storage (now per user)
 # ------------------------
 class ExpenseStorage:
-    def __init__(self, storage_file="expenses.json"):
-        self.file = storage_file
+    def __init__(self, user_id: str):
+        self.file = f"expenses_{user_id}.json"
         self._load()
 
     def _load(self):
@@ -50,7 +49,6 @@ class ExpenseLoggerAgent(ModelNode):
     def __init__(self, storage):
         super().__init__(name="ExpenseLoggerAgent")
         self.storage = storage
-
         self.category_map = {
             "juice": "Food",
             "coffee": "Food",
@@ -132,19 +130,6 @@ class SavingTipAgent(ModelNode):
         return {"tip": tip, "streak": streak}
 
 # ------------------------
-# 🧩 MCP Orchestrator
-# ------------------------
-storage = ExpenseStorage()
-logger_agent = ExpenseLoggerAgent(storage)
-trend_agent = BudgetTrendAgent(storage)
-tip_agent = SavingTipAgent(storage)
-
-mcp = FastMCP()
-mcp.register_model(logger_agent)
-mcp.register_model(trend_agent)
-mcp.register_model(tip_agent)
-
-# ------------------------
 # 🚀 FastAPI app
 # ------------------------
 app = FastAPI(title="💸 Expense & Budget Buddy")
@@ -158,45 +143,45 @@ class Expense(BaseModel):
 class Budget(BaseModel):
     weekly_budget: float
 
+# Each route now needs user_id!
 @app.post("/expense")
-def log_expense(expense: Expense):
-    return JSONResponse(content=mcp.run_model("ExpenseLoggerAgent", expense=expense.dict()))
+def log_expense(expense: Expense, user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
+    logger_agent = ExpenseLoggerAgent(storage)
+    mcp = FastMCP()
+    mcp.register_model(logger_agent)
+    return mcp.run_model("ExpenseLoggerAgent", expense=expense.dict())
 
 @app.get("/expense/trends")
-def get_trends():
-    try:
-        result = mcp.run_model("BudgetTrendAgent")
-        return JSONResponse(content=result)
-    except Exception:
-        return JSONResponse(content={
-            "daily_totals": {},
-            "weekly_total": 0,
-            "weekly_budget": storage.get_budget(),
-            "categories": {}
-        })
+def get_trends(user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
+    trend_agent = BudgetTrendAgent(storage)
+    mcp = FastMCP()
+    mcp.register_model(trend_agent)
+    return mcp.run_model("BudgetTrendAgent")
 
 @app.get("/expense/tip")
-def get_tip():
-    try:
-        result = mcp.run_model("SavingTipAgent")
-        return JSONResponse(content=result)
-    except Exception:
-        return JSONResponse(content={
-            "tip": "Could not generate tip.",
-            "streak": ""
-        })
+def get_tip(user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
+    tip_agent = SavingTipAgent(storage)
+    mcp = FastMCP()
+    mcp.register_model(tip_agent)
+    return mcp.run_model("SavingTipAgent")
 
 @app.post("/budget")
-def set_budget(budget: Budget):
+def set_budget(budget: Budget, user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
     storage.set_budget(budget.weekly_budget)
     return {"weekly_budget": storage.get_budget()}
 
 @app.get("/budget")
-def get_budget():
+def get_budget(user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
     return {"weekly_budget": storage.get_budget()}
 
 @app.get("/expenses/export")
-def export_expenses():
+def export_expenses(user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
     expenses = storage.get_expenses()
     output = StringIO()
     writer = csv.DictWriter(output, fieldnames=["date", "amount", "category", "note"])
@@ -206,7 +191,8 @@ def export_expenses():
     return Response(content=output.read(), media_type="text/csv")
 
 @app.post("/expenses/reset")
-def reset_expenses():
+def reset_expenses(user_id: str = Query(...)):
+    storage = ExpenseStorage(user_id)
     storage.data["expenses"] = []
     storage._save()
     return {"status": "✅ All expenses cleared!"}
