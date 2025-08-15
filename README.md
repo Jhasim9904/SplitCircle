@@ -1,15 +1,15 @@
 # 💸 Expense & Budget Buddy — FastAPI + FastMCP
 
-Smart Expense Buddy and Budget Tracker— Powered by FastAPI &amp; FastMCP for Agent-based Budget Management.
+Smart SplitCircle and Budget Tracker— Powered by FastAPI &amp; FastMCP for Agent-based Budget Management.
 
-**Expense Buddy** is a practical **Model-Context-Protocol (MCP)** project that helps users **log expenses**, **manage budgets**, **visualize trends**, and **export expense logs as CSV**, all powered by **FastAPI**, **FastMCP**, and **Streamlit**, deployed fully serverless on **Render**.
+**SplitCircle** is a practical **Model-Context-Protocol (MCP)** project that helps users **log expenses**, **manage budgets**, **visualize trends**, and **export expense logs as CSV**, all powered by **FastAPI**, **FastMCP**, and **Streamlit**, deployed fully serverless on **Render**.
 
 ---
 
 ## 🚀 **What It Solves**
 
 Keeping track of everyday expenses manually is tedious — especially when you’re trying to stick to a weekly budget.  
-**Expense Buddy** lets you:
+**SplitCircle** lets you:
 
 - Log expenses with notes.
 - Instantly see where your money goes with **weekly summaries**, top categories, and spending trends.
@@ -96,7 +96,7 @@ Expense-Buddy/
 
 ## ⚡ **How to Try It**
 
-1. Open the **frontend app** → [Expense Buddy UI](https://expense-buddy-frontend.onrender.com)
+1. Open the **frontend app** → [SplitCircle UI](https://expense-buddy-frontend.onrender.com)
 2. Set your budget, log expenses, and see your weekly overview.
 3. Click **Export CSV** to download your expense log.
 4. Reset your data anytime with the sidebar reset button.
